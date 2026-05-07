@@ -1,28 +1,29 @@
-# Movie Recommendation System - Backend
+# Movie Recommendation System - Simplified Backend
 
-A Python-based backend for a movie recommendation system using Flask, featuring content-based filtering, collaborative filtering, and hybrid recommendation algorithms.
+A lightweight Python Flask backend for movie recommendations using TMDb API with simple filtering by genre, year, and era. No database required!
 
 ## Features
 
-✨ **Recommendation Engines**
-- **Content-Based Filtering**: Recommends movies similar to those liked by the user
-- **Collaborative Filtering**: Suggests movies based on preferences of similar users
-- **Hybrid Approach**: Combines both techniques for improved recommendations
+✨ **Simple Filtering**
+- Filter movies by **Genre** (Action, Comedy, Drama, etc.)
+- Filter movies by **Year** (Release year)
+- Filter movies by **Genre + Year** combination
+- Search movies by title
+- Get trending movies
+- Get top-rated movies
+- Get similar movies (content-based)
 
-📚 **Core Functionality**
-- Movie database management (CRUD operations)
-- User profile management
-- Rating system for movies
-- Search functionality for movies
-- Pagination support for large datasets
-- RESTful API endpoints
+📚 **No Database Required**
+- Uses TMDb API directly
+- No authentication complexity (API key based)
+- Lightning-fast responses
+- Real-time movie data
 
 ## Tech Stack
 
 - **Framework**: Flask 2.3.2
-- **Database**: SQLAlchemy ORM (SQLite for development)
-- **ML Libraries**: Scikit-learn, Pandas, NumPy
-- **Additional**: Flask-CORS for cross-origin requests
+- **API**: The Movie Database (TMDb) API
+- **HTTP Requests**: Requests library
 
 ## Installation
 
@@ -30,46 +31,16 @@ A Python-based backend for a movie recommendation system using Flask, featuring 
 - Python 3.7+
 - pip (Python package manager)
 
-### Setup Instructions
+### Quick Setup
 
-1. **Clone the repository**
-```bash
-git clone https://github.com/Ashwinvnaik/Movie-Recommendation-System.git
-cd Movie-Recommendation-System
-```
-
-2. **Create a virtual environment**
-```bash
-python -m venv venv
-
-# Activate virtual environment
-# On Windows:
-venv\Scripts\activate
-# On macOS/Linux:
-source venv/bin/activate
-```
-
-3. **Install dependencies**
+1. **Install dependencies**
 ```bash
 cd backend
 pip install -r requirements.txt
 ```
 
-4. **Setup environment variables**
+2. **Run the application**
 ```bash
-cp .env.example .env
-# Edit .env if needed (default settings work for development)
-```
-
-5. **Seed sample data** (optional)
-```bash
-python seed_data.py
-```
-
-## Running the Application
-
-```bash
-cd backend
 python app.py
 ```
 
@@ -78,186 +49,279 @@ The API will be available at `http://localhost:5000`
 ## API Endpoints
 
 ### Health Check
-- `GET /api/health` - Check if API is running
+```
+GET /api/health
+```
 
-### Movies
-- `GET /api/movies` - Get all movies (with pagination)
-- `GET /api/movies/<id>` - Get a specific movie
-- `POST /api/movies` - Create a new movie
-- `PUT /api/movies/<id>` - Update a movie
-- `DELETE /api/movies/<id>` - Delete a movie
-- `GET /api/movies/search?q=<query>` - Search movies by title or genre
+### Get All Genres
+```
+GET /api/genres
+```
+Returns list of all available movie genres with their IDs.
 
-### Users
-- `GET /api/users` - Get all users
-- `GET /api/users/<id>` - Get a specific user
-- `POST /api/users` - Create a new user
+### Filter by Genre
+```
+GET /api/movies/genre?genre_id=28&page=1
+```
+**Parameters:**
+- `genre_id` (required): Genre ID
+- `page` (optional): Page number (default: 1)
 
-### Ratings
-- `GET /api/ratings` - Get all ratings
-- `GET /api/ratings/<id>` - Get a specific rating
-- `POST /api/ratings` - Create/update a rating
-- `DELETE /api/ratings/<id>` - Delete a rating
+**Example:** `/api/movies/genre?genre_id=28` → Action movies
 
-### Recommendations
-- `GET /api/recommendations/content-based/<movie_id>?count=5` - Content-based recommendations
-- `GET /api/recommendations/collaborative/<user_id>?count=5` - Collaborative recommendations
-- `GET /api/recommendations/hybrid/<user_id>?count=5&movie_id=<optional>` - Hybrid recommendations
-- `GET /api/recommendations/stats` - Get system statistics
+### Filter by Year
+```
+GET /api/movies/year?year=2023&page=1
+```
+**Parameters:**
+- `year` (required): Release year
+- `page` (optional): Page number (default: 1)
 
-## API Usage Examples
+### Advanced Filter (Genre + Year)
+```
+GET /api/movies/filter?genre_id=28&year=2023&page=1&sort_by=popularity.desc
+```
+**Parameters:**
+- `genre_id` (optional): Genre ID
+- `year` (optional): Release year
+- `page` (optional): Page number
+- `sort_by` (optional): Sorting option
+  - `popularity.desc` (most popular)
+  - `popularity.asc`
+  - `release_date.desc` (newest)
+  - `release_date.asc`
+  - `vote_average.desc` (highest rated)
+  - `vote_average.asc`
 
-### Get All Movies
+### Get Movie Details
+```
+GET /api/movies/{movie_id}
+```
+Returns complete details of a specific movie.
+
+### Search Movies
+```
+GET /api/search?q=Inception&page=1
+```
+**Parameters:**
+- `q` (required): Search query (movie title)
+- `page` (optional): Page number
+
+### Get Trending Movies
+```
+GET /api/trending?time_window=week&page=1
+```
+**Parameters:**
+- `time_window` (optional): `day` or `week` (default: week)
+- `page` (optional): Page number
+
+### Get Top Rated Movies
+```
+GET /api/top-rated?page=1
+```
+**Parameters:**
+- `page` (optional): Page number
+
+### Get Similar Movies
+```
+GET /api/recommendations/similar/{movie_id}
+```
+Returns movies similar to the given movie (content-based recommendation).
+
+## Popular Genre IDs
+
+| Genre | ID |
+|-------|-----|
+| Action | 28 |
+| Adventure | 12 |
+| Animation | 16 |
+| Comedy | 35 |
+| Crime | 80 |
+| Documentary | 99 |
+| Drama | 18 |
+| Family | 10751 |
+| Fantasy | 14 |
+| Horror | 27 |
+| Romance | 10749 |
+| Science Fiction | 878 |
+| Thriller | 53 |
+
+## Usage Examples
+
+### 1. Get Action Movies from 2023
 ```bash
-curl http://localhost:5000/api/movies
+curl "http://localhost:5000/api/movies/filter?genre_id=28&year=2023"
 ```
 
-### Create a Movie
+### 2. Get Comedy Movies
 ```bash
-curl -X POST http://localhost:5000/api/movies \
-  -H "Content-Type: application/json" \
-  -d '{
-    "title": "Movie Name",
-    "genre": "Action,Drama",
-    "language": "English",
-    "director": "Director Name",
-    "cast": "Actor1,Actor2",
-    "release_year": 2020,
-    "rating": 8.5,
-    "description": "Movie description"
-  }'
+curl "http://localhost:5000/api/movies/genre?genre_id=35"
 ```
 
-### Create a User
+### 3. Search for a Specific Movie
 ```bash
-curl -X POST http://localhost:5000/api/users \
-  -H "Content-Type: application/json" \
-  -d '{
-    "username": "john_doe",
-    "email": "john@example.com"
-  }'
+curl "http://localhost:5000/api/search?q=Inception"
 ```
 
-### Rate a Movie
+### 4. Get Top Rated Movies
 ```bash
-curl -X POST http://localhost:5000/api/ratings \
-  -H "Content-Type: application/json" \
-  -d '{
-    "user_id": 1,
-    "movie_id": 1,
-    "rating": 4.5
-  }'
+curl "http://localhost:5000/api/top-rated"
 ```
 
-### Get Content-Based Recommendations
+### 5. Get Similar Movies to Movie ID 550
 ```bash
-curl http://localhost:5000/api/recommendations/content-based/1?count=5
+curl "http://localhost:5000/api/recommendations/similar/550"
 ```
 
-### Get Collaborative Recommendations
+### 6. Get Trending Movies This Week
 ```bash
-curl http://localhost:5000/api/recommendations/collaborative/1?count=5
+curl "http://localhost:5000/api/trending?time_window=week"
 ```
 
-### Get Hybrid Recommendations
+### 7. Get Drama Movies from 2020, Sorted by Rating
 ```bash
-curl http://localhost:5000/api/recommendations/hybrid/1?count=5
+curl "http://localhost:5000/api/movies/filter?genre_id=18&year=2020&sort_by=vote_average.desc"
 ```
 
-## Project Structure
-
-```
-backend/
-├── app.py                      # Flask application factory
-├── config.py                   # Configuration settings
-├── models.py                   # Database models (Movie, User, Rating)
-├── routes.py                   # API endpoints
-├── recommendation_engine.py    # Recommendation algorithms
-├── seed_data.py               # Database seeding script
-├── requirements.txt           # Python dependencies
-├── .env.example              # Environment variables template
-└── movies.db                 # SQLite database (created after first run)
-```
-
-## How Recommendation Algorithms Work
-
-### Content-Based Filtering
-1. Extracts features from movies (genre, cast, director, description)
-2. Creates TF-IDF vectors from combined text features
-3. Calculates cosine similarity between movies
-4. Returns movies most similar to the input movie
-
-### Collaborative Filtering
-1. Creates user-item rating matrix
-2. Applies Truncated SVD (Singular Value Decomposition)
-3. Decomposes matrix into user factors and item factors
-4. Predicts ratings for unrated movies
-5. Returns top-rated predictions for the user
-
-### Hybrid Approach
-Combines both methods with configurable weights:
-- Default: 50% content-based + 50% collaborative
-- Returns recommendations ranked by combined score
-
-## Database Models
-
-### Movie
-- id, title, genre, language, cast, director, release_year, rating, description, poster_url
-
-### User
-- id, username, email, password_hash, created_at
-
-### Rating
-- id, user_id, movie_id, rating (1-5 stars), created_at
-
-## Configuration
-
-Edit `backend/.env` to customize:
-```
-FLASK_ENV=development          # development or production
-DATABASE_URL=sqlite:///movies.db
-SECRET_KEY=your-secret-key
-```
-
-## Error Handling
-
-The API returns consistent JSON responses:
+## API Response Format
 
 **Success Response:**
 ```json
 {
   "success": true,
-  "data": {...},
-  "message": "Operation successful"
+  "page": 1,
+  "total_pages": 100,
+  "total_results": 2000,
+  "movies": [
+    {
+      "id": 550,
+      "title": "Fight Club",
+      "overview": "An insomniac office worker...",
+      "poster_path": "/path/to/poster.jpg",
+      "release_date": "1999-10-15",
+      "vote_average": 8.8,
+      "genre_ids": [18, 53],
+      "popularity": 85.5
+    }
+  ]
 }
 ```
 
 **Error Response:**
 ```json
 {
-  "success": false,
   "error": "Error message"
 }
 ```
 
+## Project Structure
+
+```
+backend/
+├── app.py              # Main Flask application (220 lines)
+├── requirements.txt    # Python dependencies (3 packages)
+└── README.md          # Documentation
+```
+
+## How It Works
+
+1. **No Database** - All movie data fetches directly from TMDb API
+2. **API Key Based** - Uses your TMDb API key for authentication
+3. **Real-time Data** - Always returns the latest movie information
+4. **Simple Filters** - Easy-to-use query parameters for filtering by genre, year, era
+
+## Key Features
+
+✅ **Genre Filtering** - Filter by 13+ movie genres  
+✅ **Year Filtering** - Filter by release year  
+✅ **Combined Filtering** - Genre + Year together  
+✅ **Sorting Options** - Sort by popularity, rating, or release date  
+✅ **Search** - Search movies by title  
+✅ **Trending** - Get trending movies (daily/weekly)  
+✅ **Top Rated** - Get highest-rated movies  
+✅ **Recommendations** - Similar movies (content-based)  
+✅ **No Database** - Lightweight and fast  
+✅ **API Key Ready** - Pre-configured TMDb API  
+
+## Running the Backend
+
+```bash
+# Navigate to backend directory
+cd backend
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Start the server
+python app.py
+
+# Server runs at http://localhost:5000
+```
+
+## Example Use Cases
+
+### Use Case 1: Movie Night Selection
+Find all action movies from 2023:
+```bash
+curl "http://localhost:5000/api/movies/filter?genre_id=28&year=2023&sort_by=popularity.desc"
+```
+
+### Use Case 2: Classic Drama Films
+Get top-rated drama movies from 2010s:
+```bash
+curl "http://localhost:5000/api/movies/filter?genre_id=18&year=2015&sort_by=vote_average.desc"
+```
+
+### Use Case 3: Latest Recommendations
+Get movies similar to a favorite movie:
+```bash
+curl "http://localhost:5000/api/recommendations/similar/550"
+```
+
+### Use Case 4: Quick Movie Search
+Search for a specific movie:
+```bash
+curl "http://localhost:5000/api/search?q=The%20Shawshank%20Redemption"
+```
+
+## Error Handling
+
+The API handles various errors gracefully:
+- Missing required parameters
+- Invalid genre IDs or years
+- TMDb API errors
+- Connection issues
+
+All errors return a JSON response with descriptive messages.
+
+## Advantages
+
+✨ **Lightweight** - Minimal dependencies (just 3 packages)  
+⚡ **Fast** - No database overhead  
+🔧 **Easy to Use** - Simple query parameters  
+🎯 **Flexible** - Combine multiple filters  
+📊 **Real-time** - Always updated data  
+🚀 **Scalable** - Can handle large volumes  
+
 ## Future Enhancements
 
-- 🔐 User authentication and JWT tokens
-- 📊 Advanced analytics and reporting
-- 🎯 Matrix factorization techniques
-- 🌐 Integration with external movie APIs
-- 🚀 Caching for improved performance
-- 📱 Mobile app support
-- 🔄 Real-time recommendations
-- 📈 A/B testing framework
+- 💾 Response caching for faster queries
+- 📊 Advanced analytics endpoints
+- 🔄 Batch recommendations
+- 📱 Mobile optimization
+- 🌐 Multi-language support
 
-## Contributing
+## Troubleshooting
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+**Issue: Port 5000 already in use**
+- Change port in app.py: `app.run(debug=True, port=5001)`
 
-## License
+**Issue: No movies returned**
+- Verify genre_id is valid (1-37)
+- Check that year is valid (1800-2100)
 
-This project is open source and available under the MIT License.
+**Issue: API returns 401**
+- Ensure API key is correct and active on TMDb
 
 ## Support
 
