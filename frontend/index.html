@@ -243,6 +243,40 @@
   .chip:hover { background: var(--grit2); transform: translateY(-1px); }
   .chip.active { background: var(--red); color: white; }
 
+  /* FILTER CONTAINER */
+  .filter-container {
+    display: flex; gap: 16px; margin-bottom: 40px;
+    flex-wrap: wrap; align-items: flex-end;
+  }
+  .filter-group {
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .filter-label {
+    font-size: 12px; font-weight: 700;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--muted);
+  }
+  .filter-select {
+    padding: 10px 14px;
+    border: 2px solid var(--grit2);
+    border-radius: var(--r);
+    font-family: 'Be Vietnam Pro', sans-serif;
+    font-size: 14px; 
+    background: var(--white);
+    color: var(--ink); 
+    outline: none;
+    cursor: pointer;
+    transition: border-color 0.2s;
+    min-width: 150px;
+  }
+  .filter-select:focus {
+    border-color: var(--red);
+  }
+  .filter-select option {
+    background: var(--white);
+    color: var(--ink);
+  }
+
   /* MOVIE GRID */
   .movie-grid {
     display: grid;
@@ -505,6 +539,8 @@
     footer { padding: 32px 24px; flex-direction: column; text-align: center; }
     .footer-links { justify-content: center; }
     .movie-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+    .filter-container { flex-direction: column; }
+    .filter-select { width: 100%; }
   }
 </style>
 </head>
@@ -534,7 +570,7 @@
       Your Next<br><em>Obsession</em><br>Awaits.
     </h1>
     <p class="hero-sub fade-up fade-up-3">
-      Discover films curated by taste, not algorithm. Filter by genre, year, and era to find hidden gems and timeless classics.
+      Discover films curated by taste, not algorithm. Filter by genre, language, and more to find hidden gems and timeless classics.
     </p>
     <div class="hero-actions fade-up fade-up-4">
       <a href="#discover" class="btn-primary">▶ Start Exploring</a>
@@ -578,6 +614,32 @@
   <div class="search-wrap">
     <span class="search-icon">🔍</span>
     <input type="text" class="search-bar" id="search-input" placeholder="Search for a film, director, or mood...">
+  </div>
+
+  <!-- FILTER SECTION -->
+  <div class="filter-container">
+    <div class="filter-group">
+      <label class="filter-label">🎭 Filter by Genre</label>
+      <select class="filter-select" id="genre-filter" onchange="applyFilters()">
+        <option value="">All Genres</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label class="filter-label">🌍 Filter by Language</label>
+      <select class="filter-select" id="language-filter" onchange="applyFilters()">
+        <option value="">All Languages</option>
+        <option value="en">English</option>
+        <option value="es">Spanish</option>
+        <option value="fr">French</option>
+        <option value="de">German</option>
+        <option value="it">Italian</option>
+        <option value="pt">Portuguese</option>
+        <option value="ru">Russian</option>
+        <option value="ja">Japanese</option>
+        <option value="zh">Chinese</option>
+        <option value="hi">Hindi</option>
+      </select>
+    </div>
   </div>
 
   <div class="genre-row" id="genre-chips">
@@ -673,6 +735,20 @@
     return acc;
   }, {});
 
+  // Language codes for API
+  const LANGUAGE_CODES = {
+    'en': 'en-US',
+    'es': 'es-ES',
+    'fr': 'fr-FR',
+    'de': 'de-DE',
+    'it': 'it-IT',
+    'pt': 'pt-BR',
+    'ru': 'ru-RU',
+    'ja': 'ja-JP',
+    'zh': 'zh-CN',
+    'hi': 'hi-IN'
+  };
+
   // Color gradient map for posters
   const gradients = [
     '#1a0a0a,#3d1212',
@@ -681,6 +757,13 @@
     '#1a0d0a,#3d2512',
     '#0a0a1a,#12122d'
   ];
+
+  // Store current filters
+  let currentFilters = {
+    searchQuery: '',
+    genreId: null,
+    language: ''
+  };
 
   function getGradient(idx) {
     return gradients[idx % gradients.length];
@@ -836,17 +919,30 @@
         });
         
         container.innerHTML = html;
+
+        // Also populate dropdown
+        const filterSelect = document.getElementById('genre-filter');
+        data.genres.forEach(genre => {
+          const option = document.createElement('option');
+          option.value = genre.id;
+          option.textContent = genre.name;
+          filterSelect.appendChild(option);
+        });
       }
     } catch (error) {
       console.error('Error loading genres:', error);
     }
   }
 
-  async function loadMovies(genreId = null, page = 1) {
+  async function loadMovies(genreId = null, language = '', page = 1) {
     try {
       let url = `${API_BASE}/movies/filter?page=${page}`;
       if (genreId) {
         url += `&genre_id=${genreId}`;
+      }
+      if (language) {
+        const fullLanguage = LANGUAGE_CODES[language] || language;
+        url += `&language=${fullLanguage}`;
       }
       url += '&sort_by=popularity.desc';
 
@@ -897,17 +993,27 @@
   function filterByGenre(genreId, element) {
     document.querySelectorAll('#genre-chips .chip').forEach(c => c.classList.remove('active'));
     element.classList.add('active');
-    loadMovies(genreId, 1);
+    currentFilters.genreId = genreId;
+    applyFilters();
   }
 
   async function searchMovies(query) {
+    currentFilters.searchQuery = query;
+    
     if (!query.trim()) {
-      loadMovies(null, 1);
+      applyFilters();
       return;
     }
 
     try {
-      const response = await fetch(`${API_BASE}/search?q=${encodeURIComponent(query)}`);
+      let url = `${API_BASE}/search?q=${encodeURIComponent(query)}`;
+      
+      if (currentFilters.language) {
+        const fullLanguage = LANGUAGE_CODES[currentFilters.language] || currentFilters.language;
+        url += `&language=${fullLanguage}`;
+      }
+      
+      const response = await fetch(url);
       const data = await response.json();
       
       if (data.success) {
@@ -915,6 +1021,22 @@
       }
     } catch (error) {
       console.error('Error searching:', error);
+    }
+  }
+
+  function applyFilters() {
+    const searchQuery = document.getElementById('search-input').value.trim();
+    const genreId = document.getElementById('genre-filter').value;
+    const language = document.getElementById('language-filter').value;
+
+    currentFilters.searchQuery = searchQuery;
+    currentFilters.genreId = genreId || null;
+    currentFilters.language = language;
+
+    if (searchQuery) {
+      searchMovies(searchQuery);
+    } else {
+      loadMovies(genreId || null, language, 1);
     }
   }
 
@@ -931,7 +1053,7 @@
   // Initialize
   async function init() {
     await loadGenres();
-    await loadMovies(null, 1);
+    await loadMovies(null, '', 1);
     await loadTrending();
     await loadTopRated();
   }
